@@ -90,6 +90,17 @@ class Amazon_S3_and_CloudFront_Tweaks {
 		//add_filter( 'as3cf_aws_s3_console_url', array( $this, 'wasabi_s3_console_url' ) );
 
 		/*
+		 * Custom S3 API Example: Cloudflare R2
+		 * @see https://cloudflare.com/
+		 */
+		add_filter( 'as3cf_aws_s3_client_args', array( $this, 'cfr2_s3_client_args' ) );
+		add_filter( 'as3cf_aws_get_regions', array( $this, 'cfr2_get_regions' ) );
+		add_filter( 'as3cf_aws_s3_url_domain', array( $this, 'cfr2_s3_url_domain' ), 10, 5 );
+		add_filter( 'as3cf_aws_s3_bucket_in_path', '__return_true' );
+		add_filter( 'as3cf_aws_s3_domain', array( $this, 'cfr2_domain' ) );
+		add_filter( 'as3cf_aws_s3_console_url', array( $this, 'cfr2_s3_console_url' ) );
+
+		/*
 		 * Storage related filters.
 		 */
 		//add_filter( 'as3cf_allowed_mime_types', array( $this, 'allowed_mime_types' ), 10, 1 );
@@ -325,6 +336,10 @@ class Amazon_S3_and_CloudFront_Tweaks {
 		return '127.0.0.1:54321/' . $bucket;
 	}
 
+	function cfr2_s3_url_domain( $domain, $bucket, $region, $expires, $args ) {
+		return $this->cfr2_domain( $domain );
+	}
+
 	/**
 	 * Normally these filters allow you to change the default Access Control List (ACL)
 	 * permission for an original file and its thumbnails when offloaded to bucket.
@@ -413,6 +428,12 @@ class Amazon_S3_and_CloudFront_Tweaks {
 		return $args;
 	}
 
+	function cfr2_s3_client_args( $args ) {
+		$args['endpoint'] = 'https://REPLACE_WITH_ACCOUNT_ID.r2.cloudflarestorage.com';
+
+		return $args;
+	}
+
 	/**
 	 * This filter allows you to add or remove regions for the provider.
 	 *
@@ -434,6 +455,14 @@ class Amazon_S3_and_CloudFront_Tweaks {
 		return $regions;
 	}
 
+	function cfr2_get_regions( $regions ) {
+		$regions = array(
+			'auto' => 'Cloudflare R2',
+		);
+
+		return $regions;
+	}
+
 	/**
 	 * This filter allows you to change the default delivery domain for a storage provider.
 	 *
@@ -447,6 +476,10 @@ class Amazon_S3_and_CloudFront_Tweaks {
 		return 'wasabisys.com';
 	}
 
+	function cfr2_domain( $domain ) {
+		return 'REPLACE_WITH_PUBLIC_BUCKET_URL'; // pub-11111111111111111111111111111111.r2.dev
+	}
+
 	/**
 	 * This filter allows you to change the base URL used to take you to the provider's console from WP Offload Media's settings.
 	 *
@@ -458,6 +491,10 @@ class Amazon_S3_and_CloudFront_Tweaks {
 	 */
 	function wasabi_s3_console_url( $url ) {
 		return 'https://console.wasabisys.com/#/file_manager/';
+	}
+
+	function cfr2_s3_console_url( $url ) {
+		return 'https://dash.cloudflare.com/REPLACE_WITH_ACCOUNT_ID/r2/overview/buckets/REPLACE_WITH_BUCKET_NAME';
 	}
 
 	/*
